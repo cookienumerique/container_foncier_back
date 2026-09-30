@@ -1,20 +1,45 @@
-FROM php:7.4-fpm
+FROM php:8.4-fpm
 
+# 1️⃣ Dépendances système nécessaires à GD et extensions PHP
 RUN apt update \
-    && apt install -y zlib1g-dev g++ git libicu-dev zip libzip-dev zip libpq-dev \
-    && docker-php-ext-install intl opcache pgsql pdo pdo_pgsql \
+    && apt install -y \
+        git g++ zip \
+        libicu-dev \
+        libzip-dev \
+        libpq-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libfreetype6-dev \
+    \
+    # 2️⃣ Configuration + compilation de GD (OBLIGATOIRE)
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    \
+    # 3️⃣ Compilation des extensions PHP
+    && docker-php-ext-install \
+        intl \
+        opcache \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        zip \
+        gd \
+    \
+    # 4️⃣ Extensions PECL
     && pecl install apcu \
     && docker-php-ext-enable apcu \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip
+    \
+    # 5️⃣ Nettoyage
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Xdebug compatible with PHP 7.4
-RUN pecl install xdebug-3.1.6 \
-    && docker-php-ext-enable xdebug
+# 6️⃣ Xdebug compatible PHP 8.4
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && echo "xdebug.mode = coverage" > /usr/local/etc/php/conf.d/zz-xdebug-mode.ini
 
+# 7️⃣ Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+COPY php/php.ini /usr/local/etc/php/php.ini
+
 WORKDIR /var/www/html
-
-#RUN composer install --no-interaction --prefer-dist --optimize-autoloader
-

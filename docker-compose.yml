@@ -25,7 +25,6 @@ services:
       - "9003:9000"
     volumes:
       - /var/www/epa/foncier/foncier_back:/var/www/html
-      - ./docker/php:/usr/local/etc/php
     networks:
       - network_foncier_tdc
       - postgres
