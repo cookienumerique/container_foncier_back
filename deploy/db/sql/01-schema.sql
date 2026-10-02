@@ -176,7 +176,7 @@ CREATE TABLE foncier.bien (
     fk_patrimoine integer,
     s_commentaire text,
     b_bati boolean,
-    d_demolition boolean,
+    d_demolition date,
     id_zac integer
 );
 

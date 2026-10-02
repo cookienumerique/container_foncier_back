@@ -65,7 +65,6 @@ FROM noms,
                           WHEN i <= 24 THEN 'service-publicite' ELSE 'occupant' END AS groupe) g;
 
 -- ───────────── Biens : 400 parcelles + 80 lots/volumes ─────────────
--- d_demolition reste NULL : la colonne est booléenne en base mais lue comme une date par le back.
 CREATE TEMP TABLE ref AS SELECT
     (SELECT array_agg(s_code_insee ORDER BY pk_commune) FROM commune) AS insee,
     (SELECT array_agg(pk_operation ORDER BY pk_operation) FROM operation WHERE s_nom NOT LIKE 'zz%') AS operations,
@@ -79,7 +78,8 @@ INSERT INTO bien (pk_bien, fk_type_bien, fk_statut, fk_utilisateur, s_nom_bien, 
 SELECT s.i, pg_temp.l('bien.type', 'bien.type.parcelle'), s.statut, 1 + (s.i % 8), s.nom, s.nom,
        (1 + floor(random() * 80))::int || ' ' || pg_temp.pick(noms.voies), pg_temp.pick(ref.insee),
        (50 + floor(random() * 20000))::int, s.statut = pg_temp.l('bien.statut', 'bien.statut.en.stock'),
-       false, NULL, pg_temp.pick(ref.patrimoines), 'FONCIER',
+       false, CASE WHEN s.i % 40 = 0 THEN (date '2019-01-01' + (s.i * 7) % 2000) END,
+       pg_temp.pick(ref.patrimoines), 'FONCIER',
        timestamp '2015-01-01' + random() * interval '10 years'
 FROM noms, ref,
      (SELECT i, pg_temp.pick(ref.statuts) AS statut,
