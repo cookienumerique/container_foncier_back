@@ -21,6 +21,15 @@ server {
         fastcgi_read_timeout 120s;
     }
 
+    # Bouchon de l'API SI de l'EPA (injoignable depuis la preprod) :
+    # SI_API_URL=http://nginx_foncier/__si-stub renvoie des listes vides.
+    location ^~ /__si-stub/ {
+        default_type application/json;
+        location ~ ^/__si-stub/v1/zacs { return 200 '{"zacs":[]}'; }
+        location ~ ^/__si-stub/v1/lots { return 200 '{"lots":[]}'; }
+        return 404 '{"error":"endpoint SI non bouchonné"}';
+    }
+
     location ~ /\. {
         deny all;
     }
