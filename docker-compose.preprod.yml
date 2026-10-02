@@ -1,0 +1,62 @@
+# Stack de preprod (VPS). Le dev continue d'utiliser docker-compose.yml.
+# Lancement : docker compose -f docker-compose.preprod.yml --env-file .env.preprod up -d --build
+name: foncier
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  postgres_foncier:
+    image: postgres:15-alpine
+    container_name: postgres_foncier
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+    <<: *logging
+
+  api_foncier:
+    build:
+      context: docker
+      args:
+        XDEBUG: "false"
+        PHP_INI: php.preprod.ini
+    image: foncier-api:preprod
+    container_name: api_foncier
+    # Même chemin que sur l'hôte : les liens symboliques (current, shared) restent valides.
+    volumes:
+      - ${APP_ROOT}:${APP_ROOT}
+    depends_on:
+      postgres_foncier:
+        condition: service_healthy
+    restart: unless-stopped
+    <<: *logging
+
+  nginx_foncier:
+    image: nginx:1.27-alpine
+    container_name: nginx_foncier
+    environment:
+      APP_ROOT: ${APP_ROOT}
+    volumes:
+      - ${APP_ROOT}:${APP_ROOT}:ro
+      - ./docker/nginx/preprod.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      - "127.0.0.1:${API_PORT}:80"
+    depends_on:
+      - api_foncier
+    restart: unless-stopped
+    <<: *logging
+
+volumes:
+  pgdata:

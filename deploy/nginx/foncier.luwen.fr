@@ -1,0 +1,31 @@
+# Front Foncier (preprod) : fichiers statiques du build React.
+# Le HTTPS est ajouté par certbot.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name foncier.luwen.fr;
+
+    root /var/www/epa/foncier/front-foncier/current;
+    index index.html;
+    disable_symlinks off;
+
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    # Fichiers qui changent sans changer de nom : jamais en cache
+    location ~ ^/(index\.html|config\.js|version\.json)$ {
+        add_header Cache-Control "no-store" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+    }
+
+    # Fichiers du build (nom avec empreinte) : cache long
+    location /static/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+    }
+
+    # Application monopage : toute route inconnue renvoie index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

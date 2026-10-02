@@ -1,0 +1,10 @@
+// Configuration runtime du front en preprod.
+// À copier sur le VPS : /var/www/epa/foncier/front-foncier/shared/config.js
+window['config'] = {
+  NAME: 'Foncier (preprod)',
+  CODE: 'FONCIER',
+  ENV: 'preprod',
+  HOST_API: 'https://api-foncier.luwen.fr',
+  HOST_FRONT: 'https://foncier.luwen.fr',
+  HOST_SERVER_CAS: 'https://connexion-data.epamarne-epafrance.fr/idp/cas',
+};

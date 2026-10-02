@@ -1,0 +1,27 @@
+# Gabarit lu par l'image nginx : ${APP_ROOT} est remplacé au démarrage du conteneur.
+# $realpath_root résout le lien "current" à chaque requête, ce qui rend la bascule
+# de version instantanée sans redémarrer les conteneurs.
+server {
+    listen 80;
+    server_name _;
+
+    root ${APP_ROOT}/current/public;
+    index index.php;
+    client_max_body_size 50M;
+
+    location / {
+        try_files $uri /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass api_foncier:9000;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_read_timeout 120s;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}

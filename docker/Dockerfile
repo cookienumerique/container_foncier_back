@@ -32,14 +32,19 @@ RUN apt update \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 6️⃣ Xdebug compatible PHP 8.4
-RUN pecl install xdebug \
-    && docker-php-ext-enable xdebug \
-    && echo "xdebug.mode = coverage" > /usr/local/etc/php/conf.d/zz-xdebug-mode.ini
+# 6️⃣ Xdebug compatible PHP 8.4 (désactivé en preprod : XDEBUG=false)
+ARG XDEBUG=true
+RUN if [ "$XDEBUG" = "true" ]; then \
+        pecl install xdebug \
+        && docker-php-ext-enable xdebug \
+        && echo "xdebug.mode = coverage" > /usr/local/etc/php/conf.d/zz-xdebug-mode.ini; \
+    fi
 
 # 7️⃣ Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-COPY php/php.ini /usr/local/etc/php/php.ini
+# php.ini de dev par défaut, php.preprod.ini en preprod
+ARG PHP_INI=php.ini
+COPY php/${PHP_INI} /usr/local/etc/php/php.ini
 
 WORKDIR /var/www/html
